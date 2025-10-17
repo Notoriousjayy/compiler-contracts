@@ -1,0 +1,129 @@
+asyncapi: 3.0.0
+info:
+  title: Compiler Event Bus
+  version: 0.1.0
+
+servers:
+  kafkaLocal:
+    host: localhost:9092
+    protocol: kafka
+
+defaultContentType: application/json
+
+channels:
+  source.line:
+    address: source.line
+    messages:
+      SourceLineMessage:
+        $ref: "#/components/messages/SourceLine"
+  lexer.token:
+    address: lexer.token
+    messages:
+      TokenMessage:
+        $ref: "#/components/messages/Token"
+  parser.summary:
+    address: parser.summary
+    messages:
+      ParserSummaryMessage:
+        $ref: "#/components/messages/ParserSummary"
+  compiler.summary:
+    address: compiler.summary
+    messages:
+      CompilerSummaryMessage:
+        $ref: "#/components/messages/CompilerSummary"
+  execution.interpreter_summary:
+    address: execution.interpreter_summary
+    messages:
+      InterpreterSummaryMessage:
+        $ref: "#/components/messages/InterpreterSummary"
+  execution.runtime_error:
+    address: execution.runtime_error
+    messages:
+      RuntimeErrorMessage:
+        $ref: "#/components/messages/RuntimeError"
+
+components:
+  messages:
+    SourceLine:
+      name: SourceLine
+      payload:
+        type: object
+        additionalProperties: false
+        properties:
+          eventType: { const: "SOURCE_LINE" }
+          sourceId: { type: string }
+          lineNumber: { type: integer }
+          text: { type: string }
+          sequence: { type: integer, minimum: 0 }
+        required: [eventType, sourceId, lineNumber, text, sequence]
+
+    Token:
+      name: Token
+      payload:
+        type: object
+        additionalProperties: false
+        properties:
+          eventType: { const: "TOKEN" }
+          sourceId: { type: string }
+          token:
+            type: object
+            additionalProperties: false
+            properties:
+              type: { type: string }
+              text:
+                type: [string, 'null']
+              value: {}    # any type (including null)
+              line: { type: integer }
+              position: { type: integer }
+            required: [type, line, position]
+          sequence: { type: integer, minimum: 0 }
+        required: [eventType, sourceId, token, sequence]
+
+    ParserSummary:
+      name: ParserSummary
+      payload:
+        type: object
+        additionalProperties: false
+        properties:
+          eventType: { const: "PARSER_SUMMARY" }
+          parseId: { type: string }
+          statementCount: { type: integer }
+          syntaxErrors: { type: integer }
+          elapsedMs: { type: integer }
+        required: [eventType, parseId, statementCount, syntaxErrors, elapsedMs]
+
+    CompilerSummary:
+      name: CompilerSummary
+      payload:
+        type: object
+        additionalProperties: false
+        properties:
+          eventType: { const: "COMPILER_SUMMARY" }
+          artifactId: { type: string }
+          instructionCount: { type: integer }
+          elapsedMs: { type: integer }
+        required: [eventType, artifactId, instructionCount, elapsedMs]
+
+    InterpreterSummary:
+      name: InterpreterSummary
+      payload:
+        type: object
+        additionalProperties: false
+        properties:
+          eventType: { const: "INTERPRETER_SUMMARY" }
+          runId: { type: string }
+          exitCode: { type: integer }
+          elapsedMs: { type: integer }
+        required: [eventType, runId, exitCode, elapsedMs]
+
+    RuntimeError:
+      name: RuntimeError
+      payload:
+        type: object
+        additionalProperties: false
+        properties:
+          eventType: { const: "RUNTIME_ERROR" }
+          runId: { type: string }
+          message: { type: string }
+          details: {}   # any shape
+        required: [eventType, runId, message]

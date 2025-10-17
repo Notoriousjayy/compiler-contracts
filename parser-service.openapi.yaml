@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Parser Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7003
+paths:
+  /parses:
+    post:
+      summary: Start a parse
+      operationId: startParse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                sourceId: { type: string }
+                options:
+                  type: object
+                  additionalProperties: true
+              required: [sourceId]
+      responses:
+        "202":
+          description: Parse accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parseId: { type: string }
+                  status: { type: string, enum: [accepted] }
+                required: [parseId, status]
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /parses/{id}:
+    get:
+      summary: Get parse status
+      operationId: getParse
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Parse status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parseId: { type: string }
+                  state: { type: string, enum: [queued, running, completed, failed] }
+                  icodeId: { type: string, nullable: true }
+                  symTabId: { type: string, nullable: true }
+                  error:
+                    $ref: "#/components/schemas/Error"
+                    nullable: true
+                required: [parseId, state]
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /parses/{id}/summary:
+    get:
+      summary: Get parser summary
+      operationId: getParseSummary
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Parser summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParserSummary"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    ParserSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        parseId: { type: string }
+        statementCount: { type: integer }
+        syntaxErrors: { type: integer }
+        elapsedMs: { type: integer }
+      required: [parseId, statementCount, syntaxErrors, elapsedMs]
+
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]

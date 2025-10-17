@@ -1,0 +1,129 @@
+openapi: 3.0.3
+info:
+  title: Backend Orchestrator API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7006
+
+paths:
+  /jobs:
+    post:
+      summary: Create a compile or execute job
+      operationId: createJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                mode:
+                  type: string
+                  enum: [compile, execute]
+                icodeId:
+                  type: string
+                symTabId:
+                  type: string
+                parameters:
+                  type: object
+                  additionalProperties: true
+              required: [mode, icodeId, symTabId]
+      responses:
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{id}:
+    get:
+      summary: Get job status
+      operationId: getJob
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /jobs/{id}/cancel:
+    post:
+      summary: Cancel a running job
+      operationId: cancelJob
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: Cancel requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "409":
+          description: Cannot cancel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Job:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        mode:
+          type: string
+          enum: [compile, execute]
+        state:
+          type: string
+          enum: [queued, running, completed, failed, canceled]
+        icodeId:
+          type: string
+        symTabId:
+          type: string
+        resultRef:
+          type: object
+          nullable: true
+          additionalProperties: true
+        error:
+          $ref: "#/components/schemas/Error"
+      required: [id, mode, state, icodeId, symTabId]
+
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]

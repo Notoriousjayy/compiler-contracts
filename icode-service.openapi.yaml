@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: IR (ICode) Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7004
+paths:
+  /icode:
+    post:
+      summary: Create/store intermediate code
+      operationId: createICode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ICodeDocument"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ICodeRef"
+  /icode/{id}:
+    get:
+      summary: Retrieve intermediate code by id
+      operationId: getICode
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The ICode document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ICodeDocument"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    ICodeRef:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        hash:
+          type: string
+      required: [id, createdAt, hash]
+
+    ICodeDocument:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          nullable: true   # valid in 3.0.x
+        nodes:
+          type: array
+          items:
+            type: object
+        edges:
+          type: array
+          items:
+            type: object
+
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]

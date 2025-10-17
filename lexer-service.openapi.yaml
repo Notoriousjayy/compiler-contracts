@@ -1,0 +1,95 @@
+openapi: 3.0.3
+info:
+  title: Lexer Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7002
+paths:
+  /lex:
+    post:
+      summary: Tokenize a source
+      description: Starts lexing for a given source and optionally streams tokens.
+      operationId: startLex
+      parameters:
+        - in: query
+          name: stream
+          schema:
+            type: boolean
+            default: true
+          description: If true, respond as text/event-stream of TOKEN events. If false, return a JSON array of tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                sourceId:
+                  type: string
+                startOffset:
+                  type: integer
+                  minimum: 0
+              required: [sourceId]
+      responses:
+        "200":
+          description: Tokens response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  tokens:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Token"
+                  count:
+                    type: integer
+                required: [tokens, count]
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Token:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+        text:
+          type: string
+          nullable: true
+        value:
+          nullable: true
+        line:
+          type: integer
+        position:
+          type: integer
+        sequence:
+          type: integer
+          minimum: 0
+      required: [type, line, position, sequence]
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]

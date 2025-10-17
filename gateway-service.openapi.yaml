@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: API Gateway / CLI Adapter
+  version: 0.1.0
+servers:
+  - url: http://localhost:7000
+paths:
+  /v1/compile:
+    post:
+      summary: Compile a source file or text and return artifact metadata
+      operationId: gatewayCompile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                language:
+                  type: string
+                  default: pascal
+                file:
+                  type: string
+                  format: binary
+                text:
+                  type: string
+              oneOf:
+                - required: [file]
+                - required: [text]
+      responses:
+        "200":
+          description: Compile result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifactId: { type: string }
+                  parserSummary:
+                    $ref: "#/components/schemas/ParserSummary"
+                required: [artifactId]
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/execute:
+    post:
+      summary: Execute a source file or text and return the run result
+      operationId: gatewayExecute
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                language:
+                  type: string
+                  default: pascal
+                file:
+                  type: string
+                  format: binary
+                text:
+                  type: string
+                stdin:
+                  type: string
+              oneOf:
+                - required: [file]
+                - required: [text]
+      responses:
+        "200":
+          description: Run result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    ParserSummary:
+      type: object
+      properties:
+        parseId: { type: string }
+        statementCount: { type: integer }
+        syntaxErrors: { type: integer }
+        elapsedMs: { type: integer }
+    Run:
+      type: object
+      properties:
+        id: { type: string }
+        state: { type: string }
+        exitCode: { type: integer, nullable: true }
+        stdout: { type: string, nullable: true }
+        stderr: { type: string, nullable: true }
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]

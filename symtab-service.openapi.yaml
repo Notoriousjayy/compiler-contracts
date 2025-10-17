@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Symbol Table Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7005
+paths:
+  /symtabs:
+    post:
+      summary: Create/store a symbol table
+      operationId: createSymTab
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SymTab"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymTabRef"
+  /symtabs/{id}:
+    get:
+      summary: Get a symbol table
+      operationId: getSymTab
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The symbol table
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymTab"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /symtabs/{id}/symbols:
+    get:
+      summary: Query symbols by name
+      operationId: querySymbols
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: name
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Symbol list
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  symbols:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Symbol"
+                required:
+                  - symbols
+components:
+  schemas:
+    SymTabRef:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        hash:
+          type: string
+      required:
+        - id
+        - createdAt
+        - hash
+    SymTab:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          nullable: true
+        scope:
+          type: string
+        symbols:
+          type: array
+          items:
+            $ref: "#/components/schemas/Symbol"
+    Symbol:
+      type: object
+      additionalProperties: true
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+        type:
+          type: string
+          nullable: true
+        attributes:
+          type: object
+          additionalProperties: true
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required:
+        - code
+        - message

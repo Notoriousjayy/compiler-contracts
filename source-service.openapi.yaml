@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Source Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7001
+paths:
+  /sources:
+    post:
+      summary: Create a Source from uploaded content
+      description: Accepts either raw text or a file upload and returns a sourceId.
+      operationId: createSource
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                filename:
+                  type: string
+                content:
+                  type: string
+                  format: binary
+                language:
+                  type: string
+                  default: pascal
+              required: [content]
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "201":
+          description: Source created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceCreated"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sources/{id}:
+    get:
+      summary: Get Source metadata
+      operationId: getSource
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Source metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Source"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sources/{id}/stream:
+    get:
+      summary: Stream SOURCE_LINE events (SSE)
+      description: Returns Server-Sent Events of source lines as they are read.
+      operationId: streamSourceLines
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stream of SOURCE_LINE events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events payload
+components:
+  schemas:
+    SourceCreated:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string }
+        bytes: { type: integer }
+        language: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, bytes, language, createdAt]
+    Source:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string }
+        filename: { type: string }
+        bytes: { type: integer }
+        language: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, bytes, language, createdAt]
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]

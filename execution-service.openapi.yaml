@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Execution Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:7008
+paths:
+  /execute:
+    post:
+      summary: Execute IR
+      operationId: execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                icodeId:
+                  type: string
+                symTabId:
+                  type: string
+                stdin:
+                  type: string
+                  description: Optional standard input to provide to the program
+                options:
+                  type: object
+                  additionalProperties: true
+              required:
+                - icodeId
+                - symTabId
+      responses:
+        "202":
+          description: Run accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+  /runs/{id}:
+    get:
+      summary: Get run status/result
+      operationId: getRun
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+  /runs/{id}/logs:
+    get:
+      summary: Stream execution logs/events (SSE)
+      operationId: streamRunLogs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stream of INTERPRETER_SUMMARY / RUNTIME_ERROR / stdout events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+components:
+  schemas:
+    Run:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        state:
+          type: string
+          enum: [queued, running, completed, failed, canceled]
+        exitCode:
+          type: integer
+          nullable: true
+        stdout:
+          type: string
+          nullable: true
+        stderr:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        error:
+          $ref: "#/components/schemas/Error"
+      required: [id, state]
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: Application-specific error code
+        message:
+          type: string
+        details:
+          description: Optional structured error details
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+      required: [code, message]
