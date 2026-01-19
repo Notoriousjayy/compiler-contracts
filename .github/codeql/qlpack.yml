@@ -1,0 +1,4 @@
+name: Notoriousjayy/compiler-contracts-codeql-pack
+version: 0.0.1
+library: true
+dependencies: {}
